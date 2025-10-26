@@ -1,4 +1,4 @@
-.PHONY: help build run clean screenshots dmg appstore install test setup-certs configure-xcode
+.PHONY: help build run clean screenshots dmg appstore install test setup-certs configure submit
 
 # Default target
 help:
@@ -14,6 +14,7 @@ help:
 	@echo "App Store Setup:"
 	@echo "  make setup-certs - 証明書のセットアップ（ガイド付き）"
 	@echo "  make configure   - Xcodeプロジェクト設定（ガイド付き）"
+	@echo "  make submit      - 🚀 完全自動セットアップ（全ステップ実行）"
 	@echo ""
 	@echo "App Store Submission:"
 	@echo "  make screenshots - スクリーンショットを撮影"
@@ -79,3 +80,8 @@ setup-certs:
 configure:
 	@echo "⚙️  Configuring Xcode..."
 	./configure-xcode.sh
+
+# Complete App Store submission setup (all steps)
+submit:
+	@echo "🚀 Starting complete App Store submission setup..."
+	./complete-appstore-setup.sh

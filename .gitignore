@@ -61,3 +61,13 @@ google-services.json
 # Logs
 *.log
 timedonut-backend/functions/node_modules/
+
+# Certificate files (SECURITY: Never commit private keys!)
+*.key
+*.p12
+*.certSigningRequest
+*.cer
+*.mobileprovision
+*.provisionprofile
+TimeDonut_Private.key
+TimeDonut_CSR.certSigningRequest
