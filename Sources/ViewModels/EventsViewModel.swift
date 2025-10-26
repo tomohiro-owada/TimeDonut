@@ -28,6 +28,7 @@ final class EventsViewModel: ObservableObject {
     init(calendarManager: CalendarManager = .shared) {
         self.calendarManager = calendarManager
         startTimers()
+        setupNotifications()
     }
 
     deinit {
@@ -59,6 +60,20 @@ final class EventsViewModel: ObservableObject {
     }
 
     // MARK: - Private Methods
+
+    /// Setup notification observers
+    private func setupNotifications() {
+        NotificationCenter.default.addObserver(
+            forName: .resetMenuBarDisplay,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.scrollIndex = 0
+                NSLog("🔄 EventsViewModel: Reset scroll index to 0")
+            }
+        }
+    }
 
     /// Starts the update and sync timers
     private func startTimers() {

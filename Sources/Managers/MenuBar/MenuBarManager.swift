@@ -8,6 +8,7 @@ final class MenuBarManager: NSObject {
     // MARK: - Properties
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
+    private var isPopoverShown: Bool = false
 
     // MARK: - Initialization
     private override init() {
@@ -40,6 +41,8 @@ final class MenuBarManager: NSObject {
     // MARK: - Public Methods
     func updateTitle(_ title: String) {
         DispatchQueue.main.async {
+            // Skip updates while popover is shown to prevent display glitches
+            guard !self.isPopoverShown else { return }
             self.statusItem?.button?.title = " \(title)"
             NSLog("🔄 MenuBarManager: updateTitle called with '\(title)'")
         }
@@ -52,14 +55,17 @@ final class MenuBarManager: NSObject {
             popover = NSPopover()
             popover?.contentSize = NSSize(width: 360, height: 600)
             popover?.behavior = .transient
+            popover?.delegate = self
         }
 
         popover?.contentViewController = NSHostingController(rootView: contentView)
         popover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        isPopoverShown = true
     }
 
     func hidePopover() {
         popover?.performClose(nil)
+        isPopoverShown = false
     }
 
     // MARK: - Actions
@@ -107,10 +113,20 @@ final class MenuBarManager: NSObject {
     }
 }
 
+// MARK: - NSPopoverDelegate
+extension MenuBarManager: NSPopoverDelegate {
+    func popoverDidClose(_ notification: Notification) {
+        isPopoverShown = false
+        // Reset display to initial state after closing popover
+        NotificationCenter.default.post(name: .resetMenuBarDisplay, object: nil)
+    }
+}
+
 // MARK: - Notifications
 extension Notification.Name {
     static let showPopover = Notification.Name("showPopover")
     static let refreshCalendar = Notification.Name("refreshCalendar")
     static let signOut = Notification.Name("signOut")
     static let updateMenuBarTitle = Notification.Name("updateMenuBarTitle")
+    static let resetMenuBarDisplay = Notification.Name("resetMenuBarDisplay")
 }
