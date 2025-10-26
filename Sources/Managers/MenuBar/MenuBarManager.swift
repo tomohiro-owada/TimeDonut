@@ -55,7 +55,7 @@ final class MenuBarManager: NSObject {
 
         if popover == nil {
             popover = NSPopover()
-            popover?.contentSize = NSSize(width: 360, height: 600)
+            popover?.contentSize = NSSize(width: 700, height: 400)
             popover?.behavior = .transient
             popover?.delegate = self
         }
