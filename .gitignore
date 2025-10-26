@@ -61,3 +61,4 @@ Sources/Utils/Constants.swift
 
 # Logs
 *.log
+timedonut-backend/functions/node_modules/

@@ -1,0 +1,17 @@
+{
+  "name": "timedonut-backend",
+  "version": "1.0.0",
+  "description": "Google Cloud Functions backend for TimeDonut",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "gcloud functions deploy"
+  },
+  "dependencies": {
+    "@google-cloud/functions-framework": "^3.3.0",
+    "@google-cloud/firestore": "^7.1.0",
+    "googleapis": "^126.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

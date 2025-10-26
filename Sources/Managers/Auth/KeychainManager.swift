@@ -14,16 +14,13 @@ final class KeychainManager {
 
     // MARK: - Token Types
     enum TokenType: String, CaseIterable {
-        case accessToken
-        case refreshToken
+        case userID
         case userEmail
 
         var rawValue: String {
             switch self {
-            case .accessToken:
-                return Constants.Keychain.accessTokenKey
-            case .refreshToken:
-                return Constants.Keychain.refreshTokenKey
+            case .userID:
+                return Constants.Keychain.userIDKey
             case .userEmail:
                 return Constants.Keychain.userEmailKey
             }

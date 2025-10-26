@@ -9,8 +9,8 @@ import Foundation
 import AppKit
 import Network
 
-/// Manages Google OAuth 2.0 authentication using custom OAuth flow
-/// This manager handles sign-in, sign-out, token management, and session restoration
+/// Manages Google OAuth 2.0 authentication using Cloud Functions
+/// This manager handles sign-in, sign-out, and user ID management
 @MainActor
 final class GoogleAuthManager: ObservableObject {
     // MARK: - Singleton
@@ -26,11 +26,8 @@ final class GoogleAuthManager: ObservableObject {
 
     // MARK: - Configuration
     private let clientID = Constants.Google.clientID
-    private let clientSecret = Constants.Google.clientSecret
-    private let scopes = [Constants.Google.calendarScope]
-    private let redirectURI = "http://localhost:8080/oauth2callback"
-    private let authorizationEndpoint = "https://accounts.google.com/o/oauth2/auth"
-    private let tokenEndpoint = "https://oauth2.googleapis.com/token"
+    private let redirectURI = Constants.Google.redirectURI
+    private let authURL = Constants.CloudFunctions.authURL
 
     // MARK: - Initialization
     private init() {}
@@ -44,55 +41,49 @@ final class GoogleAuthManager: ObservableObject {
     func restorePreviousSignIn() async throws -> Bool {
         NSLog("🔐 GoogleAuthManager: Attempting to restore previous sign-in")
 
-        // Try to load tokens from Keychain
-        guard let accessToken = try keychainManager.retrieve(for: .accessToken),
-              let refreshToken = try keychainManager.retrieve(for: .refreshToken) else {
-            NSLog("ℹ️ GoogleAuthManager: No stored tokens found")
+        // Try to load user ID from Keychain
+        guard let userID = try keychainManager.retrieve(for: .userID) else {
+            NSLog("ℹ️ GoogleAuthManager: No stored user ID found")
             return false
         }
 
         let email = try? keychainManager.retrieve(for: .userEmail)
 
-        // Create user object from stored tokens
+        // Create user object from stored user ID
         let user = GoogleUser(
-            email: email,
-            accessToken: accessToken,
-            refreshToken: refreshToken,
-            expiresAt: Date() // Will be refreshed on first use
+            userID: userID,
+            email: email
         )
 
         currentUser = user
-        NSLog("✅ GoogleAuthManager: Previous sign-in restored for \(email ?? "unknown user")")
+        NSLog("✅ GoogleAuthManager: Previous sign-in restored for \(email ?? "user ID: \(userID)")")
 
-        // Validate tokens by attempting to refresh
-        do {
-            try await refreshAccessTokenIfNeeded()
-            return true
-        } catch {
-            NSLog("❌ GoogleAuthManager: Token validation failed: \(error)")
-            currentUser = nil
-            keychainManager.deleteAll()
-            return false
-        }
+        return true
     }
 
-    /// Initiates the Google Sign-In flow using custom OAuth 2.0
-    /// Opens browser for authentication and receives the callback via local server
+    /// Initiates the Google Sign-In flow using Cloud Functions
+    /// Opens browser for authentication and receives the user ID via local server
     /// - Throws: AuthError if authentication fails
     func signIn() async throws {
         NSLog("🔐 GoogleAuthManager: signIn() called")
 
         // Step 1: Start local HTTP server to receive the callback
-        let authorizationCode = try await startLocalServerAndGetCode()
+        let userID = try await startLocalServerAndGetUserID()
 
-        // Step 2: Exchange authorization code for tokens
-        try await exchangeCodeForTokens(authorizationCode)
+        // Step 2: Save user ID to Keychain
+        try keychainManager.save(token: userID, for: .userID)
 
-        NSLog("✅ GoogleAuthManager: Sign-in successful")
+        // Step 3: Create user object
+        currentUser = GoogleUser(
+            userID: userID,
+            email: nil
+        )
+
+        NSLog("✅ GoogleAuthManager: Sign-in successful, user ID: \(userID)")
     }
 
     /// Signs out the current user and clears all stored credentials
-    /// This removes tokens from the Keychain and clears the current user
+    /// This removes the user ID from the Keychain and clears the current user
     func signOut() {
         NSLog("🔐 GoogleAuthManager: Signing out")
         currentUser = nil
@@ -100,44 +91,20 @@ final class GoogleAuthManager: ObservableObject {
         NSLog("✅ GoogleAuthManager: Sign-out complete")
     }
 
-    /// Refreshes the access token if it has expired or is about to expire
-    /// This method checks the token expiration and refreshes if needed
-    /// - Throws: AuthError.notAuthenticated if no user is signed in, or token refresh errors
-    func refreshAccessTokenIfNeeded() async throws {
-        guard let user = currentUser else {
-            throw AuthError.notAuthenticated
-        }
-
-        let now = Date()
-        let fiveMinutesFromNow = now.addingTimeInterval(300)
-
-        // Check if token is expired or about to expire (within 5 minutes)
-        if user.expiresAt <= fiveMinutesFromNow {
-            NSLog("🔄 GoogleAuthManager: Access token expired or about to expire, refreshing...")
-            try await refreshAccessToken()
-        }
-    }
-
     // MARK: - Private Methods
 
-    /// Starts a local HTTP server and opens the OAuth URL in the browser
-    /// - Returns: The authorization code received from the callback
-    /// - Throws: AuthError if the server fails to start or no code is received
-    private func startLocalServerAndGetCode() async throws -> String {
+    /// Starts a local HTTP server and opens the Cloud Functions auth URL in the browser
+    /// - Returns: The user ID received from the callback
+    /// - Throws: AuthError if the server fails to start or no user ID is received
+    private func startLocalServerAndGetUserID() async throws -> String {
         // Start local server on port 8080
         try await startLocalServer()
 
-        // Build OAuth URL
+        // Build Cloud Functions auth URL
         let state = UUID().uuidString
-        var components = URLComponents(string: authorizationEndpoint)!
+        var components = URLComponents(string: authURL)!
         components.queryItems = [
-            URLQueryItem(name: "client_id", value: clientID),
-            URLQueryItem(name: "redirect_uri", value: redirectURI),
-            URLQueryItem(name: "response_type", value: "code"),
-            URLQueryItem(name: "scope", value: scopes.joined(separator: " ")),
-            URLQueryItem(name: "access_type", value: "offline"),
-            URLQueryItem(name: "state", value: state),
-            URLQueryItem(name: "prompt", value: "consent") // Force consent to get refresh token
+            URLQueryItem(name: "state", value: state)
         ]
 
         guard let url = components.url else {
@@ -145,14 +112,14 @@ final class GoogleAuthManager: ObservableObject {
             throw AuthError.notAuthenticated
         }
 
-        NSLog("🌐 GoogleAuthManager: Opening OAuth URL in browser")
+        NSLog("🌐 GoogleAuthManager: Opening Cloud Functions auth URL in browser")
         NSWorkspace.shared.open(url)
 
-        // Wait for the callback with the authorization code
+        // Wait for the callback with the user ID
         do {
-            let code = try await waitForAuthorizationCode()
+            let userID = try await waitForUserID()
             stopLocalServer()
-            return code
+            return userID
         } catch {
             stopLocalServer()
             throw error
@@ -209,9 +176,9 @@ final class GoogleAuthManager: ObservableObject {
             let request = String(data: data, encoding: .utf8) ?? ""
             NSLog("📨 Received HTTP request")
 
-            // Extract authorization code from the request
-            if let code = self.extractAuthorizationCode(from: request) {
-                NSLog("✅ Authorization code received")
+            // Extract user ID from the request
+            if let userID = self.extractUserID(from: request) {
+                NSLog("✅ User ID received: \(userID)")
 
                 // Send success response
                 let response = """
@@ -219,11 +186,34 @@ final class GoogleAuthManager: ObservableObject {
                 Content-Type: text/html\r
                 \r
                 <html>
-                <head><title>TimeDonut - Sign In</title></head>
-                <body style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center; padding: 50px;">
-                <h1>✅ Sign in successful!</h1>
-                <p>You can close this window and return to TimeDonut.</p>
-                <script>window.close();</script>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>TimeDonut - 認証完了</title>
+                    <style>
+                        body {
+                            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+                            text-align: center;
+                            padding: 50px;
+                            background: #f5f5f5;
+                        }
+                        .container {
+                            background: white;
+                            padding: 40px;
+                            border-radius: 12px;
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                            max-width: 400px;
+                            margin: 0 auto;
+                        }
+                        h1 { color: #4CAF50; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h1>✅ 認証成功！</h1>
+                        <p>TimeDonutアプリに戻ってください。</p>
+                        <p>このウィンドウは閉じても構いません。</p>
+                    </div>
+                    <script>setTimeout(() => window.close(), 3000);</script>
                 </body>
                 </html>
                 """
@@ -232,9 +222,9 @@ final class GoogleAuthManager: ObservableObject {
                     connection.cancel()
                 })
 
-                // Resume the continuation with the code
+                // Resume the continuation with the user ID
                 Task { @MainActor in
-                    self.serverContinuation?.resume(returning: code)
+                    self.serverContinuation?.resume(returning: userID)
                     self.serverContinuation = nil
                 }
             } else {
@@ -244,10 +234,13 @@ final class GoogleAuthManager: ObservableObject {
                 Content-Type: text/html\r
                 \r
                 <html>
-                <head><title>TimeDonut - Sign In Error</title></head>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>TimeDonut - 認証エラー</title>
+                </head>
                 <body style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center; padding: 50px;">
-                <h1>❌ Sign in failed</h1>
-                <p>No authorization code received. Please try again.</p>
+                <h1>❌ 認証失敗</h1>
+                <p>ユーザーIDを受信できませんでした。もう一度お試しください。</p>
                 </body>
                 </html>
                 """
@@ -264,10 +257,10 @@ final class GoogleAuthManager: ObservableObject {
         }
     }
 
-    /// Extracts the authorization code from the HTTP request
+    /// Extracts the user ID from the HTTP request
     /// - Parameter request: The HTTP request string
-    /// - Returns: The authorization code if found
-    private func extractAuthorizationCode(from request: String) -> String? {
+    /// - Returns: The user ID if found
+    private func extractUserID(from request: String) -> String? {
         // Parse the request line to get the path and query
         guard let firstLine = request.components(separatedBy: "\r\n").first else {
             return nil
@@ -285,13 +278,13 @@ final class GoogleAuthManager: ObservableObject {
             return nil
         }
 
-        return urlComponents.queryItems?.first(where: { $0.name == "code" })?.value
+        return urlComponents.queryItems?.first(where: { $0.name == "user_id" })?.value
     }
 
-    /// Waits for the authorization code to be received from the OAuth callback
-    /// - Returns: The authorization code
-    /// - Throws: AuthError if no code is received within timeout
-    private func waitForAuthorizationCode() async throws -> String {
+    /// Waits for the user ID to be received from the OAuth callback
+    /// - Returns: The user ID
+    /// - Throws: AuthError if no user ID is received within timeout
+    private func waitForUserID() async throws -> String {
         return try await withCheckedThrowingContinuation { continuation in
             serverContinuation = continuation
 
@@ -305,178 +298,12 @@ final class GoogleAuthManager: ObservableObject {
             }
         }
     }
-
-    /// Exchanges the authorization code for access and refresh tokens
-    /// - Parameter code: The authorization code received from OAuth callback
-    /// - Throws: AuthError if the exchange fails
-    private func exchangeCodeForTokens(_ code: String) async throws {
-        NSLog("🔄 GoogleAuthManager: Exchanging authorization code for tokens")
-
-        var request = URLRequest(url: URL(string: tokenEndpoint)!)
-        request.httpMethod = "POST"
-        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-
-        let bodyParams = [
-            "code": code,
-            "client_id": clientID,
-            "client_secret": clientSecret,
-            "redirect_uri": redirectURI,
-            "grant_type": "authorization_code"
-        ]
-
-        let bodyString = bodyParams.map { "\($0.key)=\($0.value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")" }
-            .joined(separator: "&")
-        request.httpBody = bodyString.data(using: .utf8)
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw AuthError.notAuthenticated
-        }
-
-        guard httpResponse.statusCode == 200 else {
-            NSLog("❌ Token exchange failed with status code: \(httpResponse.statusCode)")
-            if let errorString = String(data: data, encoding: .utf8) {
-                NSLog("❌ Error response: \(errorString)")
-            }
-            throw AuthError.notAuthenticated
-        }
-
-        // Parse the response
-        let tokenResponse = try JSONDecoder().decode(TokenResponse.self, from: data)
-
-        // Calculate expiration date
-        let expiresAt = Date().addingTimeInterval(TimeInterval(tokenResponse.expiresIn))
-
-        // Create user object
-        let user = GoogleUser(
-            email: nil, // We'll need to fetch this separately if needed
-            accessToken: tokenResponse.accessToken,
-            refreshToken: tokenResponse.refreshToken,
-            expiresAt: expiresAt
-        )
-
-        currentUser = user
-
-        // Save tokens to Keychain
-        try keychainManager.save(token: tokenResponse.accessToken, for: .accessToken)
-        try keychainManager.save(token: tokenResponse.refreshToken, for: .refreshToken)
-
-        NSLog("✅ Tokens saved to Keychain")
-
-        // Fetch user email from Google's userinfo endpoint
-        try await fetchUserEmail()
-    }
-
-    /// Fetches the user's email from Google's userinfo endpoint
-    /// - Throws: Error if the request fails
-    private func fetchUserEmail() async throws {
-        guard let user = currentUser else { return }
-
-        var request = URLRequest(url: URL(string: "https://www.googleapis.com/oauth2/v2/userinfo")!)
-        request.setValue("Bearer \(user.accessToken)", forHTTPHeaderField: "Authorization")
-
-        let (data, _) = try await URLSession.shared.data(for: request)
-
-        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let email = json["email"] as? String {
-            currentUser?.email = email
-            try? keychainManager.save(token: email, for: .userEmail)
-            NSLog("✅ User email: \(email)")
-        }
-    }
-
-    /// Refreshes the access token using the refresh token
-    /// - Throws: AuthError if no user is signed in or refresh fails
-    private func refreshAccessToken() async throws {
-        guard let user = currentUser else {
-            throw AuthError.notAuthenticated
-        }
-
-        NSLog("🔄 GoogleAuthManager: Refreshing access token")
-
-        var request = URLRequest(url: URL(string: tokenEndpoint)!)
-        request.httpMethod = "POST"
-        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-
-        let bodyParams = [
-            "client_id": clientID,
-            "client_secret": clientSecret,
-            "refresh_token": user.refreshToken,
-            "grant_type": "refresh_token"
-        ]
-
-        let bodyString = bodyParams.map { key, value in
-            let encodedValue = value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-            return "\(key)=\(encodedValue)"
-        }.joined(separator: "&")
-        request.httpBody = bodyString.data(using: .utf8)
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw AuthError.notAuthenticated
-        }
-
-        guard httpResponse.statusCode == 200 else {
-            NSLog("❌ Token refresh failed with status code: \(httpResponse.statusCode)")
-            if let errorString = String(data: data, encoding: .utf8) {
-                NSLog("❌ Error response: \(errorString)")
-            }
-            throw AuthError.notAuthenticated
-        }
-
-        // Parse the response
-        let tokenResponse = try JSONDecoder().decode(RefreshTokenResponse.self, from: data)
-
-        // Calculate expiration date
-        let expiresAt = Date().addingTimeInterval(TimeInterval(tokenResponse.expiresIn))
-
-        // Update user with new access token
-        currentUser?.accessToken = tokenResponse.accessToken
-        currentUser?.expiresAt = expiresAt
-
-        // Save new access token to Keychain
-        try keychainManager.save(token: tokenResponse.accessToken, for: .accessToken)
-
-        NSLog("✅ Access token refreshed successfully")
-    }
 }
 
 // MARK: - Supporting Types
 
-/// Represents a Google user with OAuth tokens
+/// Represents a Google user with user ID
 struct GoogleUser {
+    let userID: String
     var email: String?
-    var accessToken: String
-    var refreshToken: String
-    var expiresAt: Date
-}
-
-/// Response structure for token exchange
-private struct TokenResponse: Codable {
-    let accessToken: String
-    let refreshToken: String
-    let expiresIn: Int
-    let tokenType: String
-
-    enum CodingKeys: String, CodingKey {
-        case accessToken = "access_token"
-        case refreshToken = "refresh_token"
-        case expiresIn = "expires_in"
-        case tokenType = "token_type"
-    }
-}
-
-/// Response structure for token refresh
-private struct RefreshTokenResponse: Codable {
-    let accessToken: String
-    let expiresIn: Int
-    let tokenType: String
-
-    enum CodingKeys: String, CodingKey {
-        case accessToken = "access_token"
-        case expiresIn = "expires_in"
-        case tokenType = "token_type"
-    }
 }
