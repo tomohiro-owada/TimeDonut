@@ -1,0 +1,52 @@
+{
+  "app_name": "TimeDonut",
+  "subtitle": "Googleカレンダーをドーナツ時計で表示",
+  "bundle_id": "com.timedonut.app",
+  "version": "1.0.0",
+  "build": "1",
+  "category": "Productivity",
+  "price": "Free",
+  "languages": ["ja", "en"],
+  "urls": {
+    "privacy_policy": "https://tomohiro-owada.github.io/TimeDonut/privacy.html",
+    "terms_of_use": "https://tomohiro-owada.github.io/TimeDonut/terms.html",
+    "support": "https://github.com/tomohiro-owada/TimeDonut/issues",
+    "marketing": "https://tomohiro-owada.github.io/TimeDonut/"
+  },
+  "requirements": {
+    "minimum_os": "13.0",
+    "platform": "macOS"
+  },
+  "privacy": {
+    "collects_data": true,
+    "data_types": [
+      {
+        "type": "Calendar Events",
+        "category": "User Content",
+        "purpose": "App Functionality",
+        "linked_to_user": false,
+        "used_for_tracking": false
+      },
+      {
+        "type": "Email Address",
+        "category": "Contact Info",
+        "purpose": "App Functionality",
+        "linked_to_user": true,
+        "used_for_tracking": false
+      },
+      {
+        "type": "User ID",
+        "category": "Identifiers",
+        "purpose": "App Functionality",
+        "linked_to_user": true,
+        "used_for_tracking": false
+      }
+    ],
+    "third_party_sharing": false
+  },
+  "export_compliance": {
+    "uses_encryption": true,
+    "exempt": true,
+    "explanation": "Standard HTTPS communication only"
+  }
+}
