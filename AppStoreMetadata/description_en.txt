@@ -1,0 +1,51 @@
+TimeDonut is a macOS menu bar app that visualizes your Google Calendar events in a beautiful 24-hour donut clock.
+
+FEATURES
+
+🕐 24-Hour Donut Clock
+View your schedule in a beautiful donut-shaped 24-hour clock that makes it easy to see your day at a glance.
+
+⏱️ Real-Time Countdown
+See the time remaining until your next event with live updates in the menu bar. Never miss an important meeting again.
+
+📅 Google Calendar Sync
+Automatically syncs with your Google Calendar every 5 minutes to keep your schedule up-to-date.
+
+🎨 Colorful Events
+Your Google Calendar color coding is preserved, making it easy to distinguish between different types of events.
+
+📜 Scrolling Event Names
+Long event names scroll smoothly in the menu bar, so you can always see the full details.
+
+🔐 Secure Authentication
+Uses Google Cloud Functions for secure OAuth 2.0 authentication. Your credentials are never stored in the app.
+
+HOW IT WORKS
+
+1. Sign in with your Google Account
+2. Grant calendar access permissions
+3. View your schedule in the menu bar
+4. Click the icon for detailed donut clock view
+5. Right-click for quick actions (refresh, sign out, quit)
+
+PRIVACY & SECURITY
+
+• Read-only access to Google Calendar
+• All data is encrypted in transit and at rest
+• No data sharing with third parties
+• Your privacy is our priority
+
+PERFECT FOR
+
+✓ Busy professionals managing multiple meetings
+✓ Students tracking classes and assignments
+✓ Anyone who wants better time awareness
+✓ People who love beautiful, functional design
+
+REQUIREMENTS
+
+• macOS 13.0 (Ventura) or later
+• Google Account with Google Calendar
+• Internet connection
+
+Transform your time management with TimeDonut - where productivity meets beautiful design!
