@@ -30,6 +30,8 @@
     <string>Copyright © 2025 TimeDonut. All rights reserved.</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.productivity</string>
     <key>CFBundleURLTypes</key>
     <array>
         <dict>
