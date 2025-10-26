@@ -61,14 +61,15 @@ exports.events = async (req, res) => {
 
     // Google Calendar APIでイベント取得
     const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 2);
+
+    // クエリパラメータから時間範囲を取得（なければデフォルト値）
+    const timeMin = req.query.timeMin || new Date().toISOString();
+    const timeMax = req.query.timeMax || new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
 
     const response = await calendar.events.list({
       calendarId: 'primary',
-      timeMin: now.toISOString(),
-      timeMax: tomorrow.toISOString(),
+      timeMin: timeMin,
+      timeMax: timeMax,
       singleEvents: true,
       orderBy: 'startTime',
       maxResults: 50
@@ -77,11 +78,19 @@ exports.events = async (req, res) => {
     const events = response.data.items.map(event => ({
       id: event.id,
       summary: event.summary || '(タイトルなし)',
-      startTime: event.start.dateTime || event.start.date,
-      endTime: event.end.dateTime || event.end.date,
-      description: event.description,
-      location: event.location,
-      colorId: event.colorId
+      start: {
+        dateTime: event.start.dateTime || null,
+        date: event.start.date || null
+      },
+      end: {
+        dateTime: event.end.dateTime || null,
+        date: event.end.date || null
+      },
+      status: event.status || 'confirmed',
+      calendarId: 'primary',
+      colorId: event.colorId || null,
+      location: event.location || null,
+      description: event.description || null
     }));
 
     res.json({ events });
