@@ -189,6 +189,13 @@ final class EventsViewModel: ObservableObject {
     /// Updates the time until next event string
     private func updateTimeUntilNextEvent() {
         let previousEventName = eventName
+        let now = Date()
+
+        // First, check if current nextEvent is stale (past)
+        if let event = nextEvent, now >= event.endTime {
+            // Event has ended, refresh nextEvent
+            updateNextEvent()
+        }
 
         guard let event = nextEvent else {
             timePrefix = ""
@@ -200,8 +207,10 @@ final class EventsViewModel: ObservableObject {
             return
         }
 
-        // Check if event is currently ongoing
-        if event.isOngoing {
+        // Check if event is currently ongoing (using consistent Date instance)
+        let isEventOngoing = now >= event.startTime && now < event.endTime
+
+        if isEventOngoing {
             timePrefix = "開催中 "
             eventName = event.summary
             // Only reset scroll if event changed
@@ -211,8 +220,11 @@ final class EventsViewModel: ObservableObject {
             return
         }
 
-        // Calculate time until event starts
-        guard let timeInterval = event.timeUntilStart else {
+        // Event is in the future - calculate time until it starts
+        let timeInterval = event.startTime.timeIntervalSince(now)
+
+        // If timeInterval is negative, event has already started (shouldn't happen due to above check)
+        guard timeInterval > 0 else {
             timePrefix = ""
             eventName = "予定なし"
             // Only reset scroll if event changed
