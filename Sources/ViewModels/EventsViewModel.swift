@@ -76,8 +76,8 @@ final class EventsViewModel: ObservableObject {
             }
         }
 
-        // Scroll timer (0.3 second interval for marquee effect)
-        scrollTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in
+        // Scroll timer (0.5 second interval for marquee effect)
+        scrollTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.scrollText()
             }
