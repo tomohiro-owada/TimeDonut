@@ -1,4 +1,4 @@
-.PHONY: help build run clean screenshots dmg appstore install test
+.PHONY: help build run clean screenshots dmg appstore install test setup-certs configure-xcode
 
 # Default target
 help:
@@ -10,6 +10,10 @@ help:
 	@echo "  make run         - アプリをビルドして実行"
 	@echo "  make clean       - ビルド成果物を削除"
 	@echo "  make test        - テストを実行"
+	@echo ""
+	@echo "App Store Setup:"
+	@echo "  make setup-certs - 証明書のセットアップ（ガイド付き）"
+	@echo "  make configure   - Xcodeプロジェクト設定（ガイド付き）"
 	@echo ""
 	@echo "App Store Submission:"
 	@echo "  make screenshots - スクリーンショットを撮影"
@@ -65,3 +69,13 @@ install: build
 test:
 	@echo "🧪 Running tests..."
 	swift test
+
+# Setup certificates (guided)
+setup-certs:
+	@echo "🔐 Setting up certificates..."
+	./setup-certificates.sh
+
+# Configure Xcode project (guided)
+configure:
+	@echo "⚙️  Configuring Xcode..."
+	./configure-xcode.sh
