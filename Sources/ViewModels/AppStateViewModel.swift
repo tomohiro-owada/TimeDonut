@@ -68,10 +68,7 @@ final class AppStateViewModel: ObservableObject {
                 authState.userName = authManager.currentUser?.email // Use email as name
                 authState.userPhotoURL = nil // Photo URL not available in custom OAuth
 
-                // Set token expiration date
-                if let expiresAt = authManager.currentUser?.expiresAt {
-                    authState.tokenExpirationDate = expiresAt
-                }
+                // Note: Token expiration is now managed by Cloud Functions
             } else {
                 // No previous sign-in found - show sign-in view
                 showSignIn = true
@@ -101,10 +98,7 @@ final class AppStateViewModel: ObservableObject {
             authState.userName = authManager.currentUser?.email // Use email as name
             authState.userPhotoURL = nil // Photo URL not available in custom OAuth
 
-            // Set token expiration date
-            if let expiresAt = authManager.currentUser?.expiresAt {
-                authState.tokenExpirationDate = expiresAt
-            }
+            // Note: Token expiration is now managed by Cloud Functions
 
             // Hide sign-in view and clear any error messages
             showSignIn = false

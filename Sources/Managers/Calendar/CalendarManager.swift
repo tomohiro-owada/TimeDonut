@@ -125,7 +125,7 @@ final class CalendarManager {
         let cloudFunctionsResponse = try decoder.decode(CloudFunctionsEventsResponse.self, from: data)
 
         // Convert to CalendarEvent objects
-        return cloudFunctionsResponse.events.compactMap { item in
+        return cloudFunctionsResponse.events.compactMap { item -> CalendarEvent? in
             guard let start = item.start.dateTime ?? parseDate(from: item.start.date) else {
                 return nil
             }
@@ -137,8 +137,12 @@ final class CalendarManager {
                 summary: item.summary ?? "（タイトルなし）",
                 startTime: start,
                 endTime: end,
+                colorId: item.colorId,
+                calendarId: item.calendarId ?? "primary",
                 isAllDay: item.start.dateTime == nil,
-                status: EventStatus(rawValue: item.status) ?? .confirmed
+                status: EventStatus(rawValue: item.status) ?? .confirmed,
+                location: item.location,
+                description: item.description
             )
         }
     }
@@ -168,6 +172,10 @@ private struct GoogleCalendarEvent: Codable {
     let start: EventDateTime
     let end: EventDateTime
     let status: String
+    let colorId: String?
+    let calendarId: String?
+    let location: String?
+    let description: String?
 }
 
 /// Event date/time structure
