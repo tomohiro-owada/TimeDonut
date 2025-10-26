@@ -19,7 +19,10 @@ let package = Package(
         .executableTarget(
             name: "TimeDonut",
             dependencies: [],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("Resources/Assets.xcassets")
+            ]
         ),
         .testTarget(
             name: "TimeDonutTests",
