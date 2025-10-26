@@ -38,30 +38,40 @@ cp "Sources/Resources/Info.plist" "${CONTENTS_DIR}/"
 sed -i '' "s/\$(EXECUTABLE_NAME)/${APP_NAME}/g" "${CONTENTS_DIR}/Info.plist"
 sed -i '' "s/\$(PRODUCT_NAME)/${APP_NAME}/g" "${CONTENTS_DIR}/Info.plist"
 
-# Copy Assets.xcassets (for app icon)
+# Compile Assets.xcassets to Assets.car
 if [ -d "Sources/Resources/Assets.xcassets" ]; then
-    echo "🎨 Copying app icon..."
-    # Create .icns file from Assets.xcassets
-    # We'll use the 1024.png directly for now
+    echo "🎨 Compiling Assets.xcassets..."
+
+    # Use actool to compile asset catalog
+    xcrun actool "Sources/Resources/Assets.xcassets" \
+        --compile "${RESOURCES_DIR}" \
+        --platform macosx \
+        --minimum-deployment-target 13.0 \
+        --app-icon AppIcon \
+        --output-partial-info-plist /tmp/AssetInfo.plist
+
+    echo "✅ Assets.car created"
+
+    # Also create .icns file for compatibility
     if [ -f "Sources/Resources/Assets.xcassets/AppIcon.appiconset/1024.png" ]; then
         # Create temporary iconset directory
         TEMP_ICONSET="AppIcon.iconset"
         mkdir -p "${TEMP_ICONSET}"
 
         # Copy icons with proper naming for iconutil
-        cp "Sources/Resources/Assets.xcassets/AppIcon.appiconset/16.png" "${TEMP_ICONSET}/icon_16x16.png"
-        cp "Sources/Resources/Assets.xcassets/AppIcon.appiconset/32.png" "${TEMP_ICONSET}/icon_16x16@2x.png"
-        cp "Sources/Resources/Assets.xcassets/AppIcon.appiconset/32.png" "${TEMP_ICONSET}/icon_32x32.png"
-        cp "Sources/Resources/Assets.xcassets/AppIcon.appiconset/64.png" "${TEMP_ICONSET}/icon_32x32@2x.png"
-        cp "Sources/Resources/Assets.xcassets/AppIcon.appiconset/128.png" "${TEMP_ICONSET}/icon_128x128.png"
-        cp "Sources/Resources/Assets.xcassets/AppIcon.appiconset/256.png" "${TEMP_ICONSET}/icon_128x128@2x.png"
-        cp "Sources/Resources/Assets.xcassets/AppIcon.appiconset/256.png" "${TEMP_ICONSET}/icon_256x256.png"
-        cp "Sources/Resources/Assets.xcassets/AppIcon.appiconset/512.png" "${TEMP_ICONSET}/icon_256x256@2x.png"
-        cp "Sources/Resources/Assets.xcassets/AppIcon.appiconset/512.png" "${TEMP_ICONSET}/icon_512x512.png"
-        cp "Sources/Resources/Assets.xcassets/AppIcon.appiconset/1024.png" "${TEMP_ICONSET}/icon_512x512@2x.png"
+        cp "Sources/Resources/Assets.xcassets/AppIcon.appiconset/16.png" "${TEMP_ICONSET}/icon_16x16.png" 2>/dev/null || true
+        cp "Sources/Resources/Assets.xcassets/AppIcon.appiconset/32.png" "${TEMP_ICONSET}/icon_16x16@2x.png" 2>/dev/null || true
+        cp "Sources/Resources/Assets.xcassets/AppIcon.appiconset/32.png" "${TEMP_ICONSET}/icon_32x32.png" 2>/dev/null || true
+        cp "Sources/Resources/Assets.xcassets/AppIcon.appiconset/64.png" "${TEMP_ICONSET}/icon_32x32@2x.png" 2>/dev/null || true
+        cp "Sources/Resources/Assets.xcassets/AppIcon.appiconset/128.png" "${TEMP_ICONSET}/icon_128x128.png" 2>/dev/null || true
+        cp "Sources/Resources/Assets.xcassets/AppIcon.appiconset/256.png" "${TEMP_ICONSET}/icon_128x128@2x.png" 2>/dev/null || true
+        cp "Sources/Resources/Assets.xcassets/AppIcon.appiconset/256.png" "${TEMP_ICONSET}/icon_256x256.png" 2>/dev/null || true
+        cp "Sources/Resources/Assets.xcassets/AppIcon.appiconset/512.png" "${TEMP_ICONSET}/icon_256x256@2x.png" 2>/dev/null || true
+        cp "Sources/Resources/Assets.xcassets/AppIcon.appiconset/512.png" "${TEMP_ICONSET}/icon_512x512.png" 2>/dev/null || true
+        cp "Sources/Resources/Assets.xcassets/AppIcon.appiconset/1024.png" "${TEMP_ICONSET}/icon_512x512@2x.png" 2>/dev/null || true
 
         # Create .icns file
-        iconutil -c icns "${TEMP_ICONSET}" -o "${RESOURCES_DIR}/AppIcon.icns"
+        iconutil -c icns "${TEMP_ICONSET}" -o "${RESOURCES_DIR}/AppIcon.icns" 2>/dev/null || true
 
         # Clean up
         rm -rf "${TEMP_ICONSET}"
