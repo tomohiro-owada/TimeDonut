@@ -7,7 +7,7 @@ set -e
 
 # Configuration
 APP_NAME="TimeDonut"
-BUILD_DIR=".build/debug"
+BUILD_DIR=".build/release"
 BUNDLE_DIR="${APP_NAME}.app"
 CONTENTS_DIR="${BUNDLE_DIR}/Contents"
 MACOS_DIR="${CONTENTS_DIR}/MacOS"
