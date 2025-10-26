@@ -6,6 +6,9 @@ macOSメニューバー常駐型Googleカレンダーアプリ
 
 TimeDonutは、Googleカレンダーの予定をmacOSメニューバーに表示し、アナログ時計とドーナツグラフで視覚化するアプリケーションです。
 
+<img width="689" height="394" alt="スクリーンショット 2025-10-26 14 06 09" src="https://github.com/user-attachments/assets/3ec1c221-7992-4294-8fb9-b12c66f3fbf4" />
+
+
 ## 主な機能
 
 - メニューバーに次の予定までの時間を表示
