@@ -116,6 +116,8 @@ struct PopoverView: View {
                     Button(action: {
                         Task {
                             await eventsState.refresh()
+                            // Reset menu bar display after refresh
+                            NotificationCenter.default.post(name: .resetMenuBarDisplay, object: nil)
                         }
                     }) {
                         HStack(spacing: 4) {
