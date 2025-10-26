@@ -1,0 +1,63 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode
+*.xcodeproj
+*.xcworkspace
+!default.xcworkspace
+xcuserdata/
+*.xccheckout
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.xcuserstate
+project.xcworkspace/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# CocoaPods
+Pods/
+
+# Carthage
+Carthage/Build/
+
+# Google Service Info (機密情報)
+GoogleService-Info.json
+GoogleService-Info.plist
+google-services.json
+
+# Credentials
+*.p12
+*.mobileprovision
+Sources/Utils/Constants.swift
+
+# Environment files
+.env
+.env.local
+
+# Build artifacts
+*.app
+*.dSYM.zip
+*.dSYM
+
+# Testing
+*.coverage
+*.lcov
+
+# Temporary files
+*.swp
+*~
+.#*
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log

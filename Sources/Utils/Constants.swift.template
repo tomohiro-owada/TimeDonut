@@ -1,0 +1,43 @@
+import Foundation
+
+enum Constants {
+    // MARK: - Google API
+    enum Google {
+        static let clientID = "YOUR_GOOGLE_CLIENT_ID"
+        static let clientSecret = "YOUR_GOOGLE_CLIENT_SECRET"
+        static let calendarScope = "https://www.googleapis.com/auth/calendar.readonly"
+        static let redirectURI = "com.googleusercontent.apps.YOUR_CLIENT_ID:/oauth2redirect"
+    }
+
+    // MARK: - Timing
+    enum Timing {
+        static let uiUpdateInterval: TimeInterval = 1.0  // 1秒ごとにUI更新
+        static let calendarSyncInterval: TimeInterval = 300.0  // 5分ごとにカレンダー同期
+        static let apiTimeout: TimeInterval = 30.0  // APIタイムアウト
+    }
+
+    // MARK: - UI
+    enum UI {
+        static let popoverWidth: CGFloat = 360
+        static let popoverMinHeight: CGFloat = 500
+        static let popoverMaxHeight: CGFloat = 700
+        static let clockRadius: CGFloat = 120
+        static let donutInnerRadius: CGFloat = 140
+        static let donutOuterRadius: CGFloat = 160
+    }
+
+    // MARK: - App
+    enum App {
+        static let name = "TimeDonut"
+        static let version = "1.0.0"
+        static let bundleIdentifier = "com.timedonut.app"
+    }
+
+    // MARK: - Keychain
+    enum Keychain {
+        static let serviceName = "com.timedonut.app"
+        static let accessTokenKey = "timedonut.accessToken"
+        static let refreshTokenKey = "timedonut.refreshToken"
+        static let userEmailKey = "timedonut.userEmail"
+    }
+}
