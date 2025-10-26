@@ -48,7 +48,10 @@ final class EventsViewModel: ObservableObject {
         do {
             events = try await calendarManager.fetchEvents()
             updateNextEvent()
+            // Reset scroll index when calendar data is refreshed
+            scrollIndex = 0
             errorMessage = nil
+            NSLog("🔄 EventsViewModel: Calendar fetched, reset scroll index")
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -121,12 +124,15 @@ final class EventsViewModel: ObservableObject {
             return
         }
 
-        // Fixed: Display only 3 characters of event name after time prefix
-        let eventNameDisplayLength = 3
+        // Convert half-width to full-width for consistent display
+        let fullWidthEventName = convertToFullWidth(eventName)
 
-        if eventName.count <= eventNameDisplayLength {
+        // Display 5 characters of event name after time prefix
+        let eventNameDisplayLength = 5
+
+        if fullWidthEventName.count <= eventNameDisplayLength {
             // Event name fits without scrolling
-            let displayText = timePrefix + eventName
+            let displayText = timePrefix + fullWidthEventName
             timeUntilNextEvent = displayText
 
             NotificationCenter.default.post(
@@ -137,21 +143,20 @@ final class EventsViewModel: ObservableObject {
         }
 
         // Scroll: slide through the text, then fade out at the end
-        // Example for "あいうえお": あいう → いうえ → うえお → えお  → お   →      → あいう
-        let totalSteps = eventName.count + 1 // +1 for blank state
+        let totalSteps = fullWidthEventName.count + 1 // +1 for blank state
 
         let scrollingPart: String
-        if scrollIndex < eventName.count {
-            let startIdx = eventName.index(eventName.startIndex, offsetBy: scrollIndex)
-            let remainingChars = eventName.distance(from: startIdx, to: eventName.endIndex)
+        if scrollIndex < fullWidthEventName.count {
+            let startIdx = fullWidthEventName.index(fullWidthEventName.startIndex, offsetBy: scrollIndex)
+            let remainingChars = fullWidthEventName.distance(from: startIdx, to: fullWidthEventName.endIndex)
             let charsToShow = min(eventNameDisplayLength, remainingChars)
-            let endIdx = eventName.index(startIdx, offsetBy: charsToShow)
-            let text = String(eventName[startIdx..<endIdx])
-            // Pad with full-width spaces (　) to keep width constant with Japanese characters
+            let endIdx = fullWidthEventName.index(startIdx, offsetBy: charsToShow)
+            let text = String(fullWidthEventName[startIdx..<endIdx])
+            // Pad with full-width spaces (　) to keep width constant
             let spacesNeeded = eventNameDisplayLength - charsToShow
             scrollingPart = text + String(repeating: "　", count: spacesNeeded)
         } else {
-            // Blank state before looping back (3 full-width spaces)
+            // Blank state before looping back (5 full-width spaces)
             scrollingPart = String(repeating: "　", count: eventNameDisplayLength)
         }
 
@@ -197,7 +202,7 @@ final class EventsViewModel: ObservableObject {
 
         // Check if event is currently ongoing
         if event.isOngoing {
-            timePrefix = "開催中"
+            timePrefix = "開催中 "
             eventName = event.summary
             // Only reset scroll if event changed
             if previousEventName != eventName {
@@ -220,11 +225,11 @@ final class EventsViewModel: ObservableObject {
         let hours = Int(timeInterval) / 3600
         let minutes = (Int(timeInterval) % 3600) / 60
 
-        // Format time prefix in clock format (HH:MM)
+        // Format time prefix in clock format (HH:MM) with space
         if hours > 0 || minutes > 0 {
-            timePrefix = String(format: "%02d:%02d", hours, minutes)
+            timePrefix = String(format: "%02d:%02d ", hours, minutes)
         } else {
-            timePrefix = "00:00"
+            timePrefix = "00:00 "
         }
 
         eventName = event.summary
@@ -232,5 +237,21 @@ final class EventsViewModel: ObservableObject {
         if previousEventName != eventName {
             scrollIndex = 0
         }
+    }
+
+    /// Convert half-width characters to full-width for consistent display
+    private func convertToFullWidth(_ text: String) -> String {
+        var result = ""
+        for char in text {
+            let scalar = char.unicodeScalars.first!
+            // Convert ASCII alphanumerics and symbols to full-width
+            if scalar.value >= 0x0021 && scalar.value <= 0x007E {
+                let fullWidth = UnicodeScalar(scalar.value - 0x0021 + 0xFF01)!
+                result.append(String(fullWidth))
+            } else {
+                result.append(char)
+            }
+        }
+        return result
     }
 }

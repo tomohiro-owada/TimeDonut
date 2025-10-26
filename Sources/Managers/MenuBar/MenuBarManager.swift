@@ -19,8 +19,8 @@ final class MenuBarManager: NSObject {
     func setup() {
         print("🔧 MenuBarManager: setup() called")
         // Use fixed length to prevent jumping when text changes
-        // Icon (20) + "00:00" (5 chars) + 3 chars event name = ~120 pixels
-        statusItem = NSStatusBar.system.statusItem(withLength: 120)
+        // Icon (20) + "00:00" (5 chars) + 5 chars event name = ~150 pixels
+        statusItem = NSStatusBar.system.statusItem(withLength: 150)
         print("📍 MenuBarManager: statusItem created: \(statusItem != nil)")
 
         if let button = statusItem?.button {
@@ -29,6 +29,8 @@ final class MenuBarManager: NSObject {
             button.title = " ..."
             button.imagePosition = .imageLeading
             button.alignment = .left
+            // Use monospace font for consistent character width
+            button.font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
             button.action = #selector(togglePopover)
             button.target = self
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
