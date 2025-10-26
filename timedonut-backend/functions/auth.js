@@ -12,7 +12,9 @@ exports.auth = (req, res) => {
   );
 
   const scopes = [
-    'https://www.googleapis.com/auth/calendar.readonly'
+    'https://www.googleapis.com/auth/calendar.readonly',
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile'
   ];
 
   const authUrl = oauth2Client.generateAuthUrl({
