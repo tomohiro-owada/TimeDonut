@@ -126,13 +126,13 @@ final class GoogleAuthManager: ObservableObject {
         }
     }
 
-    /// Starts a local HTTP server on port 8080 to receive OAuth callbacks
+    /// Starts a local HTTP server on port 51280 to receive OAuth callbacks
     /// - Throws: AuthError if the server fails to start
     private func startLocalServer() async throws {
         let parameters = NWParameters.tcp
         parameters.allowLocalEndpointReuse = true
 
-        let listener = try NWListener(using: parameters, on: 8080)
+        let listener = try NWListener(using: parameters, on: NWEndpoint.Port(integerLiteral: Constants.Google.localPort))
 
         listener.newConnectionHandler = { [weak self] connection in
             Task { @MainActor in
@@ -143,7 +143,7 @@ final class GoogleAuthManager: ObservableObject {
         listener.stateUpdateHandler = { state in
             switch state {
             case .ready:
-                NSLog("✅ Local server started on port 8080")
+                NSLog("✅ Local server started on port \(Constants.Google.localPort)")
             case .failed(let error):
                 NSLog("❌ Local server failed: \(error)")
             case .cancelled:

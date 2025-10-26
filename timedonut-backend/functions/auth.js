@@ -19,6 +19,7 @@ exports.auth = (req, res) => {
 
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: 'offline',
+    prompt: 'consent', // 毎回refresh_tokenを取得するために必須
     scope: scopes,
     state: req.query.state || 'default' // CSRFトークン
   });

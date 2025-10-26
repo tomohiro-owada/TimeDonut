@@ -30,16 +30,22 @@ exports.callback = async (req, res) => {
     const { data: userInfo } = await oauth2.userinfo.get();
 
     // Firestoreにトークンを保存
-    await firestore.collection('users').doc(userInfo.id).set({
+    const userData = {
       email: userInfo.email,
       accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token,
       expiryDate: tokens.expiry_date,
       updatedAt: new Date()
-    });
+    };
 
-    // デスクトップアプリ（localhost:8080）にリダイレクト
-    res.redirect(`http://localhost:8080/callback?user_id=${userInfo.id}`);
+    // refreshTokenがある場合のみ保存（初回認証時のみ取得できる）
+    if (tokens.refresh_token) {
+      userData.refreshToken = tokens.refresh_token;
+    }
+
+    await firestore.collection('users').doc(userInfo.id).set(userData, { merge: true });
+
+    // デスクトップアプリ（localhost:51280）にリダイレクト
+    res.redirect(`http://localhost:51280/callback?user_id=${userInfo.id}`);
   } catch (error) {
     console.error('Error during OAuth callback:', error);
     res.status(500).send('Authentication failed: ' + error.message);
