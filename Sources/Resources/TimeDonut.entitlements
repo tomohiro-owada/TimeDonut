@@ -9,18 +9,5 @@
     <!-- Network Access -->
     <key>com.apple.security.network.client</key>
     <true/>
-
-    <!-- Hardened Runtime -->
-    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
-    <false/>
-
-    <key>com.apple.security.cs.allow-jit</key>
-    <false/>
-
-    <key>com.apple.security.cs.disable-library-validation</key>
-    <false/>
-
-    <key>com.apple.security.cs.disable-executable-page-protection</key>
-    <false/>
 </dict>
 </plist>
